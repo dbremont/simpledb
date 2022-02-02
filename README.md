@@ -8,26 +8,14 @@ Run the following to start up a simpledb REPL that will query an example databas
 
 ```
 ant
-java -jar dist/simpledb.jar parser nsf.schema
+java -jar dist/simpledb.jar parser catalog.txt
 ```
 Then enter a query into the REPL. For example try:
 
-```SELECT g.title FROM grants g WHERE g.title LIKE 'Monkey';```
+```SELECT * from tableA;```
 
 For something more intensive try this:
 
-```
-SELECT r2.name, count(g.id)
-FROM grants g, researchers r, researchers r2, grant_researchers gr,
-  grant_researchers gr2
-WHERE r.name = 'Samuel Madden'
-  AND gr.researcherid = r.id
-  AND gr.grantid = g.id
-  AND gr2.researcherid = r2.id
-  AND gr.grantid = gr2.grantid
-GROUP BY r2.name
-ORDER BY r2.name;
- ```
 
 # Database Design
 The simpledb design is surprisingly more complicated than I expected. Here is an overview of the design:
