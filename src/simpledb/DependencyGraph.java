@@ -1,6 +1,6 @@
 package simpledb;
 
-import javafx.util.Pair;
+import java.util.AbstractMap;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,12 +9,12 @@ import java.util.Queue;
 import java.util.LinkedList;
 
 public class DependencyGraph {
-    private HashMap<TransactionId, HashSet<Pair<PageId, TransactionId>>> blockingMe; // waiting tids are the keys
-    private HashMap<TransactionId, HashSet<Pair<PageId, TransactionId>>> waitingOnMe;
+    private HashMap<TransactionId, HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>> blockingMe; // waiting tids are the keys
+    private HashMap<TransactionId, HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>> waitingOnMe;
 
     public DependencyGraph() {
-        blockingMe = new  HashMap<TransactionId, HashSet<Pair<PageId, TransactionId>>>();
-        waitingOnMe = new HashMap<TransactionId, HashSet<Pair<PageId, TransactionId>>>();
+        blockingMe = new  HashMap<TransactionId, HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>>();
+        waitingOnMe = new HashMap<TransactionId, HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>>();
     }
 
     public synchronized void addDependency(TransactionId waiter, TransactionId runner, PageId pid) throws TransactionAbortedException {
@@ -23,17 +23,17 @@ public class DependencyGraph {
 
         // add runner to graph in order to properly keep track of graph size
         if(!blockingMe.containsKey(runner))
-            blockingMe.put(runner, new HashSet<Pair<PageId, TransactionId>>());
+            blockingMe.put(runner, new HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>());
 
         // update incoming and outgoing edges in dependency graph
-        Pair<PageId, TransactionId> newBlockingMeValue = new Pair<PageId, TransactionId>(pid, runner);
+        AbstractMap.SimpleEntry<PageId, TransactionId> newBlockingMeValue = new AbstractMap.SimpleEntry<PageId, TransactionId>(pid, runner);
         if(!blockingMe.containsKey(waiter))
-            blockingMe.put(waiter, new HashSet<Pair<PageId, TransactionId>>());
+            blockingMe.put(waiter, new HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>());
         blockingMe.get(waiter).add(newBlockingMeValue);
 
         if(!waitingOnMe.containsKey(runner))
-            waitingOnMe.put(runner, new HashSet<Pair<PageId, TransactionId>>());
-        Pair<PageId, TransactionId> newWaitingOnMeValue = new Pair<PageId, TransactionId>(pid, waiter);
+            waitingOnMe.put(runner, new HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>());
+        AbstractMap.SimpleEntry<PageId, TransactionId> newWaitingOnMeValue = new AbstractMap.SimpleEntry<PageId, TransactionId>(pid, waiter);
         waitingOnMe.get(runner).add(newWaitingOnMeValue);
 
         if(detectDeadlock()) {
@@ -45,18 +45,18 @@ public class DependencyGraph {
     private  void _removeDependency(TransactionId finishedRunning, TransactionId waiting, PageId pid) {
         if(!blockingMe.containsKey(waiting))
             return;
-        HashSet<Pair<PageId, TransactionId>> waitingOn = blockingMe.get(waiting);
-        Pair<PageId, TransactionId> completed = new Pair<PageId, TransactionId>(pid, finishedRunning);
+        HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>> waitingOn = blockingMe.get(waiting);
+        AbstractMap.SimpleEntry<PageId, TransactionId> completed = new AbstractMap.SimpleEntry<PageId, TransactionId>(pid, finishedRunning);
         waitingOn.remove(completed);
-        Pair<PageId, TransactionId> waitingOnMeValueToDelete = new Pair<PageId, TransactionId>(pid, waiting);
+        AbstractMap.SimpleEntry<PageId, TransactionId> waitingOnMeValueToDelete = new AbstractMap.SimpleEntry<PageId, TransactionId>(pid, waiting);
         waitingOnMe.get(finishedRunning).remove(waitingOnMeValueToDelete);
     }
 
     public synchronized void removeDependencies(TransactionId finishedRunning, PageId pid) {
         if(!waitingOnMe.containsKey(finishedRunning))
             return;
-        HashSet<Pair<PageId, TransactionId>> blockedByMe = (HashSet<Pair<PageId, TransactionId>>) waitingOnMe.get(finishedRunning).clone();
-        for(Pair<PageId,TransactionId> blocked : blockedByMe) {
+        HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>> blockedByMe = (HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>) waitingOnMe.get(finishedRunning).clone();
+        for(AbstractMap.SimpleEntry<PageId,TransactionId> blocked : blockedByMe) {
             if(blocked.getKey().equals(pid))
                 _removeDependency(finishedRunning, blocked.getValue(), pid);
         }
@@ -67,13 +67,13 @@ public class DependencyGraph {
 
         // calculate in-degrees
         HashMap<TransactionId, Integer> indegrees = new HashMap<TransactionId, Integer>();
-        for(Map.Entry<TransactionId, HashSet<Pair<PageId, TransactionId>>> entry : blockingMe.entrySet()) {
+        for(Map.Entry<TransactionId, HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>>> entry : blockingMe.entrySet()) {
             TransactionId source = entry.getKey();
             if(!indegrees.containsKey(source))
                 indegrees.put(source, 0);
 
-            HashSet<Pair<PageId, TransactionId>> destinations = entry.getValue();
-            for(Pair<PageId, TransactionId> p : destinations) {
+            HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>> destinations = entry.getValue();
+            for(AbstractMap.SimpleEntry<PageId, TransactionId> p : destinations) {
                 TransactionId dest = p.getValue();
                 if(!indegrees.containsKey(dest))
                     indegrees.put(dest, 0);
@@ -100,8 +100,8 @@ public class DependencyGraph {
         while(sources.size() > 0) {
             TransactionId current = sources.poll();
             visitedCount++;
-            HashSet<Pair<PageId, TransactionId>> children = blockingMe.get(current);
-            for(Pair<PageId, TransactionId> p : children) {
+            HashSet<AbstractMap.SimpleEntry<PageId, TransactionId>> children = blockingMe.get(current);
+            for(AbstractMap.SimpleEntry<PageId, TransactionId> p : children) {
                 TransactionId childId = p.getValue();
                 indegrees.put(childId, indegrees.get(childId)-1);
                 if(indegrees.get(childId) == 0)

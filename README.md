@@ -4,6 +4,11 @@ This database was inspired from MIT's database systems course which has all thei
 After completing the course, I have made some tweaks and added my own features.
 
 # How to Run
+
+Requirements:
+- Java 11
+- Ant
+
 Run the following to start up a simpledb REPL that will query an example database I have already set up:
 
 ```
